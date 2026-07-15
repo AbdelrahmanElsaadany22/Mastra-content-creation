@@ -5,16 +5,32 @@ import { LibSQLStore } from '@mastra/libsql';
 import { DuckDBStore } from "@mastra/duckdb";
 import { MastraCompositeStore } from '@mastra/core/storage';
 import { Observability, MastraStorageExporter, MastraPlatformExporter, SensitiveDataFilter } from '@mastra/observability';
-import { toolCallAppropriatenessScorer, completenessScorer, translationScorer } from './scorers/weather-scorer';
 import { linkedinAgent } from './agents/LinkedInAgent';
+import { twitterAgent } from './agents/TwitterAgent';
+import { instagramAgent } from './agents/InstagramAgent';
+import { facebookAgent } from './agents/FacebookAgent';
+import { articlesAgent } from './agents/ArticlesAgent';
 import { validateLinkedInPost, formatLinkedInText } from './tools/linkedin-post-tools';
+import { validateTweet, splitIntoThread } from './tools/twitter-tools';
+import { validateInstagramCaption } from './tools/instagram-tools';
+import { validateFacebookPost } from './tools/facebook-tools';
+import { analyzeArticleStructure, checkSeoMetadata } from './tools/article-tools';
 import { searchWeb, findRecentDiscussion } from './tools/research-tools';
 
 export const mastra = new Mastra({
-  workflows: {  },
-  agents: { linkedinAgent },
-  tools: { validateLinkedInPost, formatLinkedInText, searchWeb, findRecentDiscussion },
-  scorers: { toolCallAppropriatenessScorer, completenessScorer, translationScorer },
+  agents: { linkedinAgent, twitterAgent, instagramAgent, facebookAgent, articlesAgent },
+  tools: {
+    validateLinkedInPost,
+    formatLinkedInText,
+    validateTweet,
+    splitIntoThread,
+    validateInstagramCaption,
+    validateFacebookPost,
+    analyzeArticleStructure,
+    checkSeoMetadata,
+    searchWeb,
+    findRecentDiscussion,
+  },
   storage: new MastraCompositeStore({
     id: 'composite-storage',
     default: new LibSQLStore({

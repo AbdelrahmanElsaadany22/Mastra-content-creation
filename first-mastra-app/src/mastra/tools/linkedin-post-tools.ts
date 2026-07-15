@@ -1,13 +1,17 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 
+import {
+  countChars,
+  extractHashtags,
+  extractUrls,
+  foldPreview,
+  isCutMidThought,
+  MARKDOWN_PATTERN,
+} from './text-utils';
+
 const MAX_POST_LENGTH = 3000;
 const SEE_MORE_CUTOFF = 210;
-const HASHTAG_PATTERN = /#[\p{L}\p{N}_]+/gu;
-const URL_PATTERN = /https?:\/\/[^\s]+/g;
-
-/** Counts code points rather than UTF-16 units so emoji count as one character. */
-const countChars = (text: string): number => [...text].length;
 
 export const validateLinkedInPost = createTool({
   id: 'validate-linkedin-post',
@@ -32,14 +36,11 @@ export const validateLinkedInPost = createTool({
   }),
   execute: async ({ post }) => {
     const characterCount = countChars(post);
-    const hookText = [...post].slice(0, SEE_MORE_CUTOFF).join('');
-    const hashtags = post.match(HASHTAG_PATTERN) ?? [];
-    const links = post.match(URL_PATTERN) ?? [];
-    const markdownArtifacts = /(\*\*|__|^#{1,6}\s|\[.+\]\(.+\))/m.test(post);
-
-    // The reader gets a complete thought only if a sentence or line ends somewhere inside the
-    // visible window — not merely if the window happens to stop on a boundary.
-    const hookCutMidThought = characterCount > SEE_MORE_CUTOFF && !/[.!?\n]/.test(hookText);
+    const hookText = foldPreview(post, SEE_MORE_CUTOFF);
+    const hashtags = extractHashtags(post);
+    const links = extractUrls(post);
+    const markdownArtifacts = MARKDOWN_PATTERN.test(post);
+    const hookCutMidThought = isCutMidThought(post, SEE_MORE_CUTOFF);
 
     const issues: string[] = [];
 
